@@ -182,32 +182,29 @@ window.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    new MenuCard(
-        "img/tabs/vegy.jpg",
-        "vegy",
-        'Меню "Фитнес"',
-        'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        9,
-        ".menu .container"
-    ).render();
+    // const getResource = async (url) => {
+    //     const res = await fetch(url);
 
-    new MenuCard(
-        "img/tabs/post.jpg",
-        "post",
-        'Меню "Постное"',
-        'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.',
-        14,
-        ".menu .container"
-    ).render();
+    //     if(!res.ok) {
+    //         throw new Error(`Could not fetch ${url}, status: ${res.status}`);
+    //     }
 
-    new MenuCard(
-        "img/tabs/elite.jpg",
-        "elite",
-        'Меню “Премиум”',
-        'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
-        21,
-        ".menu .container"
-    ).render();
+    //     return await res.json();
+    // }
+
+    // getResource('http://localhost:3000/menu')
+    //     .then(data => {
+    //         data.forEach(({img, altimg, title, descr, price}) => {
+    //             new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+    //         });
+    //     });
+
+    axios.get('http://localhost:3000/menu')
+        .then(data => {
+            data.data.forEach(({img, altimg, title, descr, price}) => {
+                new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+            });
+        });
 
     // Forms
 
@@ -220,10 +217,21 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 
     formsElems.forEach(item => {
-        postData(item);
+        bindPostData(item);
     });
 
-    function postData(form) {
+    const postData = async (url, data) => {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-type': 'application/json',
+            },
+            body: data,
+        });
+        return await res.json();
+    } 
+
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -237,18 +245,9 @@ window.addEventListener('DOMContentLoaded', function() {
     
             const formData = new FormData(form);
 
-            const obj = {};
-            formData.forEach((value, key) => {
-                obj[key] = value;
-            });
+            const json = JSON.stringify(Object.fromEntries(formData.entries()));
 
-            fetch('server.php', {
-                method: "POST",
-                headers: {
-                    'Content-type': 'application/json',
-                },
-                body: JSON.stringify(obj),
-            }).then (data => data.text())
+            postData('http://localhost:3000/requests', json)
             .then(data => {
                 console.log(data);
                 showThanksModal(message.success);
@@ -287,8 +286,161 @@ window.addEventListener('DOMContentLoaded', function() {
         }, 4000);
     }
 
-    fetch('db.json')
+    fetch('http://localhost:3000/menu')
         .then(data => data.json())
         .then(res => console.log(res));
+
+    //Slider
+
+     
+    const offerSliderNext = document.querySelector('.offer__slider-next'),
+          offerSlider = document.querySelector('.offer__slider'),
+          offerSliderPrev = document.querySelector('.offer__slider-prev'),
+          offerSlideElems = document.querySelectorAll('.offer__slide'),
+          currentElem = document.querySelector('#current'),
+          totalElem = document.querySelector('#total'),
+          offerSliderWrapper = document.querySelector('.offer__slider-wrapper'),
+          offerSliderInner = document.querySelector('.offer__slider-inner'),
+          width = window.getComputedStyle(offerSliderWrapper).width;
+
+    let slideIndex = 1;
+    let offset = 0;
+
+    if(offerSlideElems.length < 10) {
+        totalElem.textContent = `0${offerSlideElems.length}`;
+        currentElem.textContent = `0${slideIndex}`;
+    }else {
+        totalElem.textContent = offerSlideElems.length;
+        currentElem.textContent = slideIndex;
+    }
+
+    offerSliderInner.style.width = 100 * offerSlideElems.length + '%';
+    offerSliderInner.style.display = 'flex';
+    offerSliderInner.style.transition = '0.5s all';
+
+    offerSliderWrapper.style.overflow = 'hidden';
+
+    offerSlideElems.forEach(slide => {
+        slide.style.width = width;
+    });
+
+    offerSlider.style.position = 'relative';
+
+    const dots = document.createElement('ol'),
+          arrayDot = [];
+    dots.classList.add('carousel-indicators');
+
+    offerSlider.append(dots);
+
+    for(let i = 0; i < offerSlideElems.length; i++) {
+        const dot = document.createElement('li');
+        dot.setAttribute('data-slide-to', i + 1);
+        dot.classList.add('dot');
+        dots.append(dot);
+        if(i == 0) {
+            dot.style.opacity = '1';
+        }
+        arrayDot.push(dot);
+    }
     
+    offerSliderNext.addEventListener('click', () => {
+        if(offset == +width.slice(0, width.length - 2) * (offerSlideElems.length - 1)) {
+            offset = 0;
+        } else {
+            offset += +width.slice(0, width.length - 2);
+        }
+        offerSliderInner.style.transform = `translateX(-${offset}px)`;
+
+        if(slideIndex == offerSlideElems.length) {
+            slideIndex = 1;
+        }else {
+            slideIndex++;
+        }
+        
+        insertZero();
+        styleOpacity();
+    });
+
+    offerSliderPrev.addEventListener('click', () => {
+        if(offset == 0) {
+            offset = +width.slice(0, width.length - 2) * (offerSlideElems.length - 1);
+        } else {
+            offset -= +width.slice(0, width.length - 2);
+        }
+        offerSliderInner.style.transform = `translateX(-${offset}px)`;
+
+        if(slideIndex == 1) {
+            slideIndex = offerSlideElems.length;
+        }else {
+            slideIndex--;
+        }
+        
+        insertZero();
+        styleOpacity();
+    });
+
+    arrayDot.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+            const slideTo = e.target.getAttribute('data-slide-to');
+            slideIndex = slideTo;
+
+            offset = +width.slice(0, width.length - 2) * (slideTo - 1);
+            offerSliderInner.style.transform = `translateX(-${offset}px)`;
+
+            insertZero();
+            styleOpacity();
+        });
+    });
+
+    function insertZero() {
+        if(offerSlideElems.length < 10) {
+            currentElem.textContent = `0${slideIndex}`;
+        }else {
+            currentElem.textContent = slideIndex;
+        }
+    }
+
+    function styleOpacity() {
+        arrayDot.forEach(dot => dot.style.opacity = '0.5');
+        arrayDot[slideIndex - 1].style.opacity = '1';
+    }
+
+    // showSlides(slideIndex);
+
+    // if(offerSlideElems.length < 10) {
+    //     totalElem.textContent = `0${offerSlideElems.length}`;
+    // }else {
+    //     totalElem.textContent = offerSlideElems.length;
+    // }
+
+    // function showSlides(n) {
+    //     if(n > offerSlideElems.length) {
+    //         slideIndex = 1;
+    //     }
+
+    //     if(n < 1) {
+    //         slideIndex = offerSlideElems.length;
+    //     }
+
+    //     if(offerSlideElems.length < 10) {
+    //         currentElem.textContent = `0${slideIndex}`;
+    //     }else {
+    //         currentElem.textContent = slideIndex;
+    //     }
+
+    //     offerSlideElems.forEach(item => item.style.display = 'none');
+    //     offerSlideElems[slideIndex - 1].style.display = 'block';   
+    // }
+
+    // function plusSlides(n) {
+    //     showSlides(slideIndex += n);
+    // }
+
+    // offerSliderPrev.addEventListener('click', () => {
+    //     plusSlides(-1);
+    // });
+    // offerSliderNext.addEventListener('click', () => {
+    //     plusSlides(1);
+    // });
+
 });
