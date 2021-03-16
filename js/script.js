@@ -284,7 +284,11 @@ window.addEventListener('DOMContentLoaded', function() {
             prevModalDialog.classList.add('show');
             prevModalDialog.classList.remove('hide');
             closeModal();
-        }, 4000)
+        }, 4000);
     }
+
+    fetch('db.json')
+        .then(data => data.json())
+        .then(res => console.log(res));
     
 });
