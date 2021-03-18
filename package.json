@@ -12,11 +12,24 @@
   },
   "author": "",
   "license": "ISC",
+  "browrserslist": [
+    "> 1%"
+  ],
   "bugs": {
     "url": "https://github.com/TimeSetTrue/foodsMy/issues"
   },
   "homepage": "https://github.com/TimeSetTrue/foodsMy#readme",
   "devDependencies": {
+    "@babel/cli": "^7.13.10",
+    "@babel/core": "^7.13.10",
+    "@babel/preset-env": "^7.13.10",
+    "babel-loader": "^8.2.2",
+    "core-js": "^3.9.1",
     "json-server": "^0.16.3"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "es6-promise": "^4.2.8",
+    "nodelist-foreach-polyfill": "^1.2.0"
   }
 }
